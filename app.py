@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 import finnhub
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
+from plotly import graphobjects as go
 
 # load the dotenv variables, most importantly the api key
 def configure():
@@ -44,9 +45,8 @@ def fetch_mspr(client, symbol):
 
     return res['data'][-1]['mspr']
 
-
-def graph_insider_sentiment(client, symbol):
-
+# working on the hoverable graphs
+# def graph_insider_sentiment(client, symbol):
     today = datetime.today()
 
     last_year = today - timedelta(days=365)
@@ -59,21 +59,55 @@ def graph_insider_sentiment(client, symbol):
     yearly_sentiment = {}
 
     for i in res['data']:
-        month_year = str(i['year']) + "-" + str(i['month'])
+        month_year = (str(i['month']) + "-" + str(i['year'])[-2:])
         if not month_year in yearly_sentiment:
             yearly_sentiment[month_year] = []
         yearly_sentiment[month_year].append(round(i['mspr'], 2))
 
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatter(
+        x=list(yearly_sentiment.keys()),
+        y=list(yearly_sentiment.values()),
+        mode='lines+markers',
+        name=symbol,
+        visible=False  # start hidden
+    ))
+
+# graph the insider sentiment trend for the current year as well as last year
+def graph_insider_sentiment(client, symbol):
+
+    # get today's date and last year today.
+    today = datetime.today()
+    last_year = today - timedelta(days=365)
+    today = today.strftime("%Y-%m-%d")
+    last_year = last_year.strftime("%Y-%m-%d")
+
+    # get all the insider mspr data for last year and this year
+    res = client.stock_insider_sentiment(symbol, last_year, today)
+
+    # create a dict to hold each month and its mspr
+    yearly_sentiment = {}
+
+    # fill the dict
+    for i in res['data']:
+        month_year = (str(i['month']) + "-" + str(i['year'])[-2:])
+        if not month_year in yearly_sentiment:
+            yearly_sentiment[month_year] = []
+        yearly_sentiment[month_year].append(round(i['mspr'], 2))
+
+    # plot the data
     fig, ax = plt.subplots()
     ax.plot(list(yearly_sentiment.keys()), list(yearly_sentiment.values()), marker="o")
     ax.set_xlabel("Month")
     ax.set_ylabel("Buy/Sell Rating")
     ax.set_title("Insider Sentiment in Recent History")
+    ax.tick_params(axis='x', labelsize=8) 
 
     st.pyplot(fig)
 
-
-# def color_mspr(val):
+# working on a feature to color code symbol based on mspr
+#def color_mspr(val):
     if val > 0:
         color = 'green'
     elif val < 0:
