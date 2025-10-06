@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 import finnhub
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
-from plotly import graphobjects as go
+#from plotly import graphobjects as go
 
 # load the dotenv variables, most importantly the api key
 def configure():
